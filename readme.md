@@ -1,32 +1,21 @@
-# Microservices with Spring Boot and Kafka Demo Project [![Twitter](https://img.shields.io/twitter/follow/piotr_minkowski.svg?style=social&logo=twitter&label=Follow%20Me)](https://twitter.com/piotr_minkowski)
+# Создан микросервис Kafka + Spring
 
-[![CircleCI](https://circleci.com/gh/piomin/sample-spring-kafka-microservices.svg?style=svg)](https://circleci.com/gh/piomin/sample-spring-kafka-microservices)
 
-[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-black.svg)](https://sonarcloud.io/dashboard?id=piomin_sample-spring-kafka-microservices)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=piomin_sample-spring-kafka-microservices&metric=bugs)](https://sonarcloud.io/dashboard?id=piomin_sample-spring-kafka-microservices)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=piomin_sample-spring-kafka-microservices&metric=coverage)](https://sonarcloud.io/dashboard?id=piomin_sample-spring-kafka-microservices)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=piomin_sample-spring-kafka-microservices&metric=ncloc)](https://sonarcloud.io/dashboard?id=piomin_sample-spring-kafka-microservices)
+## Описание
+Имеется три микросервиса: \
+`order-service` - отправляет `Order` событие в топик Kafka и управляет процессом распределенной транзакции \
+`payment-service` -  выполняет локальную транзакцию по счету клиента на основе цены `Order` \
+`stock-service` - выполняет локальную транзакцию на основе количества товаров в `Order`
 
-## Articles
-This repository is used as the example for the following articles:
-1. [Distributed Transactions in Microservices with Kafka Streams and Spring Boot](https://piotrminkowski.com/2022/01/24/distributed-transactions-in-microservices-with-kafka-streams-and-spring-boot/) - how to implement distributed transaction based on the SAGA pattern with Spring Boot and Kafka Streams
-2. [Deep Dive into Saga Transactions with Kafka Streams and Spring Boot](https://piotrminkowski.com/2022/02/07/deep-dive-into-saga-transactions-with-kafka-streams-and-spring-boot/) - how to implement distributed transaction based on the SAGA pattern with Spring Boot and fully Kafka Streams `KStream` and `KTable`. You need to switch to the [streams-full](https://github.com/piomin/sample-spring-kafka-microservices/tree/streams-full) branch.
-
-## Description
-There are three microservices: \
-`order-service` - it sends `Order` events to the Kafka topic and orchestrates the process of a distributed transaction \
-`payment-service` - it performs local transaction on the customer account basing on the `Order` price \
-`stock-service` - it performs local transaction on the store basing on number of products in the `Order`
-
-Here's the diagram with our architecture:
 
 ![image](https://raw.githubusercontent.com/piomin/sample-spring-kafka-microservices/master/arch.png)
 
-(1) `order-service` send a new `Order` -> `status == NEW` \
-(2) `payment-service` and `stock-service` receive `Order` and handle it by performing a local transaction on the data \
-(3) `payment-service` and `stock-service` send a reponse `Order` -> `status == ACCEPT` or `status == REJECT` \
-(4) `order-service` process incoming stream of orders from `payment-service` and `stock-service`, join them by `Order` id and sends Order with a new status -> `status == CONFIRMATION` or `status == ROLLBACK` or `status == REJECTED` \
-(5) `payment-service` and `stock-service` receive `Order` with a final status and "commit" or "rollback" a local transaction make before
+## Принцип работы
+(1) `order-service` отправляет новый `Order` -> `status == NEW` \
+(2) `payment-service` и `stock-service` получают `Order` и обрабатывают действие, выполняя локальную транзакцию \
+(3) `payment-service` и `stock-service` отправляют ответ `Order` -> `status == ACCEPT` или `status == REJECT` \
+(4) `order-service` обрабатывают входящий поток от `payment-service` и `stock-service`, и помещает их в `Order` с новым статусом -> `status == CONFIRMATION` или `status == ROLLBACK` или `status == REJECTED` \
+(5) `payment-service` и `stock-service` получают `Order` с окончательным статусом "commit" или "rollback"
 
 ## Running on Docker locally
 You can easily run all the apps on Docker with Spring Boot support for
